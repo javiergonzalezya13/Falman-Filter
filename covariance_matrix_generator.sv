@@ -6,6 +6,7 @@ module covariance_matrix_generator #(
 		parameter intDigits = 16
     )(
     input logic clk,
+    input logic clk_en,
     input logic reset,
     input logic Start_Prediction,
     input logic Start_K_G,
@@ -345,13 +346,26 @@ module covariance_matrix_generator #(
 
     always_ff @(posedge clk)
     begin
-        state <= (reset)?IDLE:stateNext;
-        g <= (reset)?P0:g_next;
-		prev_matrix_inversion<= prev_matrix_inversion_next;
-        t <= matrix_inv;//*********************************************
-        t2 <= t2_next;
-        matrix_en3 <= matrix_en3_next;
-        c <= (reset)?P0:c_next;
+		if(clk_en) 
+		begin
+			state <= (reset)?IDLE:stateNext;
+			g <= (reset)?P0:g_next;
+			c <= (reset)?P0:c_next;
+			prev_matrix_inversion<= prev_matrix_inversion_next;
+			t <= matrix_inv;
+			t2 <= t2_next;
+			matrix_en3 <= matrix_en3_next;
+		end
+		else
+		begin
+			state <= state;
+			g <= g;
+			c <= c;
+			prev_matrix_inversion<= prev_matrix_inversion;
+			t <= t;
+			t2 <= t2;
+			matrix_en3 <= matrix_en3;
+		end
 	end
     
 endmodule

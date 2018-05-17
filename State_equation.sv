@@ -8,6 +8,7 @@ module State_equation#(
 		parameter intDigits = 16
     )(
         input logic clk,
+		input logic clk_en,
         input logic reset,
         input logic Start_Prediction, 					//Start prediction
         input logic Start_Update, 						//Start update
@@ -20,7 +21,8 @@ module State_equation#(
         input logic [WIDTH-1:0] X_0[0:nos-1],			//Estado inicial
         output ready_Prediction,
         output ready_Update,
-        output logic [WIDTH-1:0] X_nk[0:nos-1]
+        output logic [WIDTH-1:0] X_nkP[0:nos-1],
+        output logic [WIDTH-1:0] X_nkU[0:nos-1]
     );
 	
 	
@@ -183,10 +185,23 @@ module State_equation#(
     
     always_ff @(posedge clk)
     begin
-        state <= (reset)?IDLE:stateNext;
-        St_prev <= St_prev_next;
-        St_I <= (state == IDLE)?X_0:St_I_next;
-        St_P <= (state == IDLE)?X_0:St_P_next;
-        X_nk <= (state == IDLE)?X_0:(state == STATE5)?St_P:X_nk;
-    end
+		if(clk_en) 
+		begin
+			state <= (reset)?IDLE:stateNext;
+			St_prev <= St_prev_next;
+			St_I <= (state == IDLE)?X_0:St_I_next;
+			St_P <= (state == IDLE)?X_0:St_P_next;
+			X_nkU <= (state == IDLE)?X_0:(state == STATE11)?St_U:X_nkU;
+			X_nkP <= (state == IDLE)?X_0:(state == STATE5)?St_P:X_nkP;
+		end
+		else
+		begin
+			state <= state;
+			St_prev <= St_prev;
+			St_I <= St_I;
+			St_P <= St_P;
+			X_nkU <= X_nkU;		
+			X_nkP <= X_nkP;		
+		end
+	end
 endmodule

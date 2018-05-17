@@ -1,10 +1,11 @@
 `timescale 1ns / 1ps
 module main(
     input clk,
+	input clk_en,
     input reset,
-    input U,
-	input Y,
-    output State
+    input [WIDTH-1:0] U,
+	input [WIDTH-1:0] Y,
+    output [WIDTH-1:0] State
     );
 
 	//Maquina de estados
@@ -24,43 +25,47 @@ module main(
 
 	
 	//Matrices de estado
-	localparam A = ;
-	localparam B = ;
-	localparam C = ;
-	
+	localparam [WIDTH-1:0] A [0:nos-1][0:nos-1] = ;
+	localparam [WIDTH-1:0] B [0:nos-1][0:noi-1] = ;
+	localparam [WIDTH-1:0] C [0:noo-1][0:nos-1] = ;
+		
 	//Covarianzas
-	localparam Q = ;
-	localparam R = ;
+	localparam [WIDTH-1:0] Q [0:nos-1][0:nos-1] = ;
+	localparam [WIDTH-1:0] R [0:noo-1][0:noo-1] = ;
 
 	//Condiciones iniciales
-	localparam P0 = ;
-	localparam X0 = ;
+	localparam [WIDTH-1:0] P0 [0:nos-1][0:nos-1] = ;
+	localparam [WIDTH-1:0] X0 [0:nos-1] = ;
 
 
 	//Constante
 	localparam Retardada = 1'd1; //1: ecuacion de estado escritas retardada
 								 //0: ecuacion de estado escritas en adelanto
 
+	//Estados
+	logic [WIDTH-1:0] X_nkP [0:nos-1];
+	logic [WIDTH-1:0] X_nkU [0:nos-1];
+	
 	
 	//Variables de control ecuaciones de estado
-	logic State_Prediction;
-    logic State_Update;
+	logic State_Prediction; //Activa prediccion de estados
+    logic State_Update;		//Activa actualizacion de estados
 
-    logic ready_State_Prediction;
-    logic ready_State_Update;
+    logic ready_State_Prediction;	//Termino de prediccion de estados
+    logic ready_State_Update;		//Termino de actualizacion de estados
 
 
 	//Variables de control matriz de covarianza
-    logic Covariance_Prediction;
-    logic Covariance_Gain;
+    logic Covariance_Prediction; 	//Inicia prediccion de covarianza
+    logic Covariance_Gain;			//Inicia calculo de ganancia de kalman
 
-    logic end_Prediction,;
-    logic end_K_G;
-	logic end_Update;
+    logic end_Prediction,;			//Termino de prediccion de covarianza
+    logic end_K_G;					//Termino de ganancia de kalman
+	logic end_Update;				//Termino de actualizacion de covarianza
 
 	
 	//Variables interconexion
-	logic ready_calculation; //Finaliza de calcular
+	logic ready_calculation; 		//Finaliza de calcular
 	
 	
 	//Calculo de variables de control
@@ -71,8 +76,11 @@ module main(
 
 	assign State_Prediction = (Retardada)?(state == STATE1):(ready_State_Update);
 	assign State_Update = end_K_G;
+	
+	assign State = (Retardada)?X_nkP:X_nkU;
 
     State_equation #(.WIDTH(WIDTH), .nos(nos), .noo(noo), .noi(noi), .intDigits(intDigits)) state_eq(.clk(clk), 
+																									.ck_en(clk_en),
 																									.reset(reset), 
 																									.Start_Prediction(State_Prediction), 
 																									.Start_Update(State_Update), 
@@ -85,9 +93,11 @@ module main(
 																									.X_0(X0), 
 																									.ready_Prediction(ready_State_Prediction), 
 																									.ready_Update(ready_State_Update), 
-																									.X_nk(State));
+																									.X_nkP(X_nkP),
+																									.X_nkU(X_nkU));
 
 	covariance_matrix_generator #(.WIDTH(WIDTH), .nos(nos), .noo(noo), .intDigits(intDigits)) covar_eq(.clk(clk), 
+																									.ck_en(clk_en),
 																									.reset(reset), 
 																									.Start_Prediction(Covariance_Prediction), 
 																									.Start_K_G(Covariance_Gain), 
@@ -116,9 +126,6 @@ module main(
     always_ff @(posedge clk)
     begin
 		state <= (reset)?State0:stateNext;
-	end
-
-
-	
+	end	
 	
 endmodule
