@@ -2,7 +2,8 @@
 module covariance_matrix_generator #(
         parameter WIDTH = 16,
         parameter nos = 4,//number of states
-        parameter noo = 2 //number of outputs
+        parameter noo = 2, //number of outputs
+		parameter intDigits = 16
     )(
     input logic clk,
     input logic reset,

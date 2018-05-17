@@ -4,7 +4,8 @@ module State_equation#(
         parameter WIDTH = 16,
         parameter nos = 4,
         parameter noo = 2,
-        parameter noi = 2
+        parameter noi = 2,
+		parameter intDigits = 16
     )(
         input logic clk,
         input logic reset,
