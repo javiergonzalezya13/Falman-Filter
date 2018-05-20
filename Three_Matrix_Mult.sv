@@ -12,11 +12,6 @@ module Three_Matrix_Mult#(
         output logic [WIDTH-1:0] Res[0:nos-1][0:nos-1],
         output endMult
     );
-    //input and output ports.
-    //The size 32 bits which is 2*2=4 elements,each of which is 8 bits wide.
-    //internal variables
-    //reg [WIDTH:0] Res1 [0:nos][0:nos]; 
-    
     
     localparam IDLE = 2'd0;
     localparam FIRSTMULT = 2'd1;

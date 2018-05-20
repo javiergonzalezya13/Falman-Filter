@@ -19,8 +19,8 @@ module State_equation#(
         input logic [WIDTH-1:0] Y[0:noo-1],				//Salida planta
         input logic [WIDTH-1:0] K_nk[0:nos-1][0:noo-1], //K(nk)
         input logic [WIDTH-1:0] X_0[0:nos-1],			//Estado inicial
-        output ready_Prediction,
-        output ready_Update,
+        output logic ready_Prediction,
+        output logic ready_Update,
         output logic [WIDTH-1:0] X_nkP[0:nos-1],
         output logic [WIDTH-1:0] X_nkU[0:nos-1]
     );
@@ -50,8 +50,8 @@ module State_equation#(
 	//Variables de control
     logic en0, en1, en2;//Habilita flip flop
     logic [1:0] Sel;//Control de multiplexores
-	logic Start_mult, Start_inv;
-	logic end_mult, end_inv;
+	logic Start_mult;
+	logic end_mult;
 
     
 	//Matrices intermedias
@@ -76,6 +76,8 @@ module State_equation#(
     logic [WIDTH-1:0] matrix_mult_in_2 [0:nos-1];			//Entrada 2
     logic [WIDTH-1:0] matrix_mult_res[0:nos-1];				//Resultado
 	
+	logic [WIDTH-1:0] matrix_mult[0:nos-1];
+	logic [WIDTH-1:0] matrix_mult_next[0:nos-1];
 
 	//Indices de matrices
     integer int_i0, int_i1, int_i2;
@@ -83,36 +85,48 @@ module State_equation#(
     
 
 	//Multiplicacion
-    Matrix_mult_3 #(.WIDTH(WIDTH), .nos(nos), .intDigits(16)) AxB(.A1(matrix_mult_in_1), .B1(matrix_mult_in_2), .Res1(matrix_mult_res));
-    
+    Matrix_Mult_nx1#(
+            .WIDTH(WIDTH),
+            .nos(nos),
+            .intDigits(intDigits)
+        ) MMnx1(
+            .clk(clk),
+            .startMult(Start_mult),
+            .A(matrix_mult_in_1),
+            .B(matrix_mult_in_2),
+            .Res(matrix_mult_res),
+            .endMult(end_mult)
+        );
 
     assign en0 = ((state == STATE2)||(state == STATE8));
     assign en1 = (state == STATE5);
     assign en2 = (state == STATE11);
 
-    assign ready_x_nk_P = (state == STATE5);
-    assign ready_x_nk_I = (state == STATE11);
+    assign ready_Prediction = (state == STATE5);
+    assign ready_Update = (state == STATE11);
+    
+    assign Start_mult = ((state == STATE0)||(state == STATE3)||(state == STATE6)||state == STATE9);
     
     always_comb 
     begin
 		//**************************************ARREGLAR*************
         ///////////////////////////////State Machine//////////////////////////////////////////
         case(state)
-            IDLE: stateNext = (Start_P)?STATE0:(ready_K_G)?STATE1:IDLE;
+            IDLE: stateNext = (Start_Prediction)?STATE0:(Start_Update)?STATE1:IDLE;
 
             STATE0: stateNext = STATE1;
             STATE1: stateNext = (end_mult)?STATE2:STATE1;
             STATE2: stateNext = STATE3;
             STATE3: stateNext = STATE4;
             STATE4: stateNext = (end_mult)?STATE5:STATE4;
-            STATE5: stateNext = (ready_K_G)?STATE6:STATE5;
+            STATE5: stateNext = (Start_Update)?STATE6:STATE5;
 			
             STATE6: stateNext = STATE7;
             STATE7: stateNext = (end_mult)?STATE8:STATE7;
             STATE8: stateNext = STATE9;
             STATE9: stateNext = STATE10;
             STATE10: stateNext = (end_mult)?STATE11:STATE10;
-            STATE11 stateNext = (Start_P)?STATE0:STATE11;
+            STATE11: stateNext = (Start_Prediction)?STATE0:STATE11;
 
             default: stateNext = IDLE;
         endcase
@@ -160,9 +174,11 @@ module State_equation#(
 
         ///////////////////////////////Calculo de matrices//////////////////////////////////////////		
         for(int_i0=0; int_i0 < nos; int_i0++)
-            St_prev_next[int_i0] = (en0)?matrix_mult_res[int_i0] + matrix_add[int_i0]:St_prev[int_i0];
-			St_I_next[int_i0] = (en1)?matrix_mult_res[int_i0] + matrix_add[int_i0]:St_I[int_i0];
-			St_P_next[int_i0] = (en2)?matrix_mult_res[int_i0] + matrix_add[int_i0]:St_P[int_i0];
+            begin
+                St_prev_next[int_i0] = (en0)?matrix_mult[int_i0] + matrix_add[int_i0]:St_prev[int_i0];
+			    St_I_next[int_i0] = (en1)?matrix_mult[int_i0] + matrix_add[int_i0]:St_I[int_i0];
+			    St_P_next[int_i0] = (en2)?matrix_mult[int_i0] + matrix_add[int_i0]:St_P[int_i0];
+            end
         /////////////////////////////////////////////////////////////////////////
 
         ///////////////////////////////Reajuste de matrices//////////////////////////////////////////
@@ -180,6 +196,8 @@ module State_equation#(
 			Y_nosx1[int_i2] = (int_i2<noo)?Y[int_i2]:{WIDTH{1'd0}};
 		end
         /////////////////////////////////////////////////////////////////////////
+        if(end_mult) matrix_mult_next = matrix_mult_res;
+        else matrix_mult_next = matrix_mult;
         
     end
     
@@ -191,8 +209,9 @@ module State_equation#(
 			St_prev <= St_prev_next;
 			St_I <= (state == IDLE)?X_0:St_I_next;
 			St_P <= (state == IDLE)?X_0:St_P_next;
-			X_nkU <= (state == IDLE)?X_0:(state == STATE11)?St_U:X_nkU;
+			X_nkU <= (state == IDLE)?X_0:(state == STATE11)?St_I:X_nkU;
 			X_nkP <= (state == IDLE)?X_0:(state == STATE5)?St_P:X_nkP;
+			matrix_mult <= matrix_mult_next;
 		end
 		else
 		begin
@@ -201,7 +220,8 @@ module State_equation#(
 			St_I <= St_I;
 			St_P <= St_P;
 			X_nkU <= X_nkU;		
-			X_nkP <= X_nkP;		
+			X_nkP <= X_nkP;
+			matrix_mult <= matrix_mult;
 		end
 	end
 endmodule

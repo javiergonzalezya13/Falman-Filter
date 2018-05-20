@@ -5,21 +5,21 @@ module covariance_matrix_generator #(
         parameter noo = 2, //number of outputs
 		parameter intDigits = 16
     )(
-    input logic clk,
-    input logic clk_en,
-    input logic reset,
-    input logic Start_Prediction,
-    input logic Start_K_G,
-    input logic [WIDTH-1:0] A [0:nos-1][0:nos-1],
-    input logic [WIDTH-1:0] C [0:noo-1][0:nos-1],
-    input logic [WIDTH-1:0] Q [0:nos-1][0:nos-1], // Covarianza ruido de entrada
-    input logic [WIDTH-1:0] R [0:noo-1][0:noo-1], // Covarianza ruido de salida
-    input logic [WIDTH-1:0] P0 [0:nos-1][0:nos-1],// Covarianza inicial
+        input logic clk,
+        input logic clk_en,
+        input logic reset,
+        input logic Start_Prediction,
+        input logic Start_K_G,
+        input logic [WIDTH-1:0] A [0:nos-1][0:nos-1],
+        input logic [WIDTH-1:0] C [0:noo-1][0:nos-1],
+        input logic [WIDTH-1:0] Q [0:nos-1][0:nos-1], // Covarianza ruido de entrada
+        input logic [WIDTH-1:0] R [0:noo-1][0:noo-1], // Covarianza ruido de salida
+        input logic [WIDTH-1:0] P0 [0:nos-1][0:nos-1],// Covarianza inicial
 
-    output logic [WIDTH-1:0] t2 [0:nos-1][0:noo-1], // K(nk)
-    output logic end_Prediction,
-    output logic end_K_G,
-	output logic end_Update
+        output logic [WIDTH-1:0] t2 [0:nos-1][0:noo-1], // K(nk)
+        output logic end_Prediction,
+        output logic end_K_G,
+        output logic end_Update
     );
     
 	
@@ -69,6 +69,7 @@ module covariance_matrix_generator #(
     logic [WIDTH-1:0] c_next [0:nos-1][0:nos-1];
     logic [WIDTH-1:0] t2_next [0:nos-1][0:noo-1];
     logic [WIDTH-1:0] matrix_en3_next [0:nos-1][0:nos-1];
+    logic [WIDTH-1:0] t_next [0:noo-1][0:noo-1];
     
     //Matrices expandidas    
     logic [WIDTH-1:0] t_nosxnos [0:nos-1][0:nos-1];
@@ -76,8 +77,12 @@ module covariance_matrix_generator #(
     logic [WIDTH-1:0] C_nosxnos [0:nos-1][0:nos-1];    
 
 	//Entrada y salida multiplicacion
-    logic [WIDTH-1:0] matrix_mult [0:nos-1][0:nos-1]; //SALIDA DEL MULTIPLICADOR
-
+	
+	
+	
+    logic [WIDTH-1:0] matrix_AxBxC [0:nos-1][0:nos-1]; //SALIDA DEL MULTIPLICADOR
+    
+    logic [WIDTH-1:0] matrix_mult [0:nos-1][0:nos-1];
     logic [WIDTH-1:0] matrix_mult_next [0:nos-1][0:nos-1];
 	
     //Entrada inversion
@@ -92,22 +97,41 @@ module covariance_matrix_generator #(
     integer int_j0, int_j1, int_j2, int_j3, int_j4;
 
 	//*********************************************************************
-	//Multiplicacion
-    Matrix_mult_2 #(.WIDTH(WIDTH), .nos(nos)) mult_AxBxC(.A1(matrix_mult_in_1), .B1(matrix_mult_in_2), .Res1(matrix_AxBxC));
-	//*********************************************************************
-
+	//Multiplicacion//*********************************************************************
+    Three_Matrix_Mult#(
+            .WIDTH(WIDTH),
+            .nos(nos),
+            .intDigits(intDigits)
+        ) AxBxC(
+            .clk(clk),
+            .startMult(Start_mult),
+            .A(matrix_mult_in_1),
+            .B(matrix_mult_in_2),
+            .C(matrix_mult_in_3),
+            .Res(matrix_AxBxC),
+            .endMult(end_mult)
+        );
 	
 	//*********************************************************************	
-	//Calculo de inversa
-    logic [WIDTH-1:0] determinant;
-    assign determinant = $signed(prev_matrix_inversion[0][0])*$signed(prev_matrix_inversion[1][1]) - $signed(prev_matrix_inversion[0][1])*$signed(prev_matrix_inversion[1][0]);
-	//*********************************************************************
+	//Inversion
+    Matrix_Inversor_2x2#(
+            .WIDTH(WIDTH),
+            .intDigits(intDigits)
+        ) MI(
+            .clk(clk),
+            .startInv(Start_inv),
+            .A(prev_matrix_inversion),
+            .Res(matrix_inv),
+            .endInv(end_inv)
+        );
+    //*********************************************************************
 
 	
 	
-	assign end_Pnk_P = (state == STATE2);
+	assign end_Prediction = (state == STATE2);
     assign end_K_G   = ((state == STATE9)&&(end_mult));
-    assign end_Pnk_U = (state == STATE13);
+    assign end_Update = (state == STATE13);
+
 
     always_comb
     begin
@@ -130,7 +154,7 @@ module covariance_matrix_generator #(
             STATE10: stateNext = STATE11;
             STATE11: stateNext = (end_mult)?STATE12:STATE11;
             STATE12: stateNext = STATE13;
-            STATE13: stateNext = (Start_Prediction)?STATE1:STATE13;
+            STATE13: stateNext = (Start_Prediction)?STATE0:STATE13;
 
             default: stateNext = IDLE;
         endcase
@@ -293,7 +317,7 @@ module covariance_matrix_generator #(
                 t2_nosxnos[int_i4][int_j4] = (int_j4<noo)?t2[int_i4][int_j4]:{WIDTH{1'd0}};
         
         // C        
-                H_nosxnos[int_i4][int_j4] = (int_i4<noo)?C[int_i4][int_j4]:{WIDTH{1'd0}};
+                C_nosxnos[int_i4][int_j4] = (int_i4<noo)?C[int_i4][int_j4]:{WIDTH{1'd0}};
         
         // C^T
                 j[int_i4][int_j4] = C_nosxnos[int_j4][int_i4];
@@ -306,37 +330,13 @@ module covariance_matrix_generator #(
 
 
 		///////////////////////////////////INVERTIR/////////////////////////////////////////////////
-        t_next[0][0] = (Start_inv)?{{WIDTH-1{1'd0}}, 1'd1}:t[0][0];//$signed(prev_matrix_inversion[1][1])/$signed(determinant):t[0][0];
-        t_next[0][1] = (Start_inv)?{WIDTH{1'd0}}:t[0][1];//$signed(~prev_matrix_inversion[0][1] + {{WIDTH-1{1'd0}}, 1'd1})/$signed(determinant):t[0][1];
-        t_next[1][0] = (Start_inv)?{WIDTH{1'd0}}:t[1][0];//$signed(~prev_matrix_inversion[1][0] + {{WIDTH-1{1'd0}}, 1'd0})/$signed(determinant):t[1][0];
-        t_next[1][1] = (Start_inv)?{{WIDTH-1{1'd0}}, 1'd1}:t[1][1];//$signed(prev_matrix_inversion[0][0])/$signed(determinant):t[1][1];
-    
+
+        if(end_inv) t_next = matrix_inv;
+        else t_next = t;
 		////////////////////////////////////////////////////////////////////////////////////
 
-		///////////////////////////////////MULTIPLICAR/////////////////////////////////////////////////
-		//Entrada de multiplicador
-		case(state)
-            STATE0, STATE3, STATE9:
-            begin
-                matrix_mult_in_1 = A;
-                matrix_mult_in_2 = B;
-            end
-            STATE1, STATE4, STATE10:
-            begin
-                matrix_mult_in_1 = matrix_mult;
-                matrix_mult_in_2 = C;
-            end
-            default:
-            begin
-                matrix_mult_in_1 = A;
-                matrix_mult_in_2 = B;
-            end
-        endcase
         //Calculate matrix_mult        
-        if(Start_mult)
-        begin
-            matrix_mult_next = matrix_AxBxC;
-        end
+        if(end_mult) matrix_mult_next = matrix_AxBxC;
         else matrix_mult_next = matrix_mult;
 		////////////////////////////////////////////////////////////////////////////////////
 		
@@ -352,9 +352,10 @@ module covariance_matrix_generator #(
 			g <= (reset)?P0:g_next;
 			c <= (reset)?P0:c_next;
 			prev_matrix_inversion<= prev_matrix_inversion_next;
-			t <= matrix_inv;
+			t <= t_next;
 			t2 <= t2_next;
 			matrix_en3 <= matrix_en3_next;
+			matrix_mult <= matrix_mult_next;
 		end
 		else
 		begin
@@ -365,6 +366,7 @@ module covariance_matrix_generator #(
 			t <= t;
 			t2 <= t2;
 			matrix_en3 <= matrix_en3;
+			matrix_mult <= matrix_mult;
 		end
 	end
     
