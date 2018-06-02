@@ -173,7 +173,8 @@ module main#(
 
     always_ff @(posedge clk)
     begin
-		state <= (reset)?STATE0:stateNext;
+		if(clk_en) state <= (reset)?STATE0:stateNext;
+		else state <= state;
 	end	
 	
 endmodule

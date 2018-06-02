@@ -104,6 +104,7 @@ module covariance_matrix_generator #(
             .intDigits(intDigits)
         ) AxBxC(
             .clk(clk),
+            .clk_en(clk_en),
             .startMult(Start_mult),
             .A(matrix_mult_in_1),
             .B(matrix_mult_in_2),
@@ -119,6 +120,7 @@ module covariance_matrix_generator #(
             .intDigits(intDigits)
         ) MI(
             .clk(clk),
+            .clk_en(clk_en),
             .startInv(Start_inv),
             .A(prev_matrix_inversion),
             .Res(matrix_inv),

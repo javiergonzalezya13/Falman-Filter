@@ -5,6 +5,7 @@ module Matrix_Inversor_2x2#(
         parameter intDigits = 16
     )(
         input clk,
+        input clk_en,
         input startInv,
         input logic [WIDTH-1:0] A[0:1][0:1],
         output logic [WIDTH-1:0] Res[0:1][0:1] = '{default:0},
@@ -32,7 +33,7 @@ module Matrix_Inversor_2x2#(
     logic div_valid;
     logic [31:0] div_data;
     logic t_valid;
-    assign t_valid = ((state == INVERSION0)||(state == INVERSION1)||(state == INVERSION2)||(state == INVERSION3));
+    assign t_valid = (clk_en&&((state == INVERSION0)||(state == INVERSION1)||(state == INVERSION2)||(state == INVERSION3)));
     assign endInv = (state == ENDINV);
     
     div_gen_1 Div(
@@ -85,7 +86,15 @@ module Matrix_Inversor_2x2#(
     end
     always_ff@(posedge clk)
     begin
-        Res <= ResNext;
-        state <= stateNext;
+        if(clk_en)
+        begin
+            Res <= ResNext;
+            state <= stateNext;
+        end
+        else 
+        begin
+            Res <= Res;
+            state <= state;
+        end
     end
 endmodule

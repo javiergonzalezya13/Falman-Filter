@@ -5,6 +5,7 @@ module Three_Matrix_Mult#(
         parameter intDigits = 16
     )(
         input clk,
+        input clk_en,
         input startMult,
         input logic [WIDTH-1:0] A[0:nos-1][0:nos-1],
         input logic [WIDTH-1:0] B[0:nos-1][0:nos-1],
@@ -41,6 +42,7 @@ module Three_Matrix_Mult#(
             intDigits
         ) AxBxC(
             .clk(clk),
+            .clk_en(clk_en),
             .multON(multON),
             .A(firstMatrix),
             .B(secondMatrix),
@@ -86,7 +88,15 @@ module Three_Matrix_Mult#(
     end
     always_ff@(posedge clk)
     begin
-        state <= stateNext;
-        Res <= ResNext;
+        if(clk_en)
+        begin
+            state <= stateNext;
+            Res <= ResNext;
+        end
+        else
+        begin
+            state <= state;
+            Res <= Res;
+        end
     end
 endmodule

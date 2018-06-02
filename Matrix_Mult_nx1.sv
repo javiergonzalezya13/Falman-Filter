@@ -5,6 +5,7 @@ module Matrix_Mult_nx1#(
         parameter intDigits = 16
     )(
         input clk,
+        input clk_en,
         input startMult,
         input logic [WIDTH-1:0] A[0:nos-1][0:nos-1],
         input logic [WIDTH-1:0] B[0:nos-1],
@@ -49,8 +50,17 @@ module Matrix_Mult_nx1#(
     end
     always_ff@(posedge clk)
     begin
-        state <= stateNext;
-        Res <= ResNext;
-        subI <= subINext;
+        if(clk_en)
+        begin
+            state <= stateNext;
+            Res <= ResNext;
+            subI <= subINext;
+        end
+        else
+        begin
+            state <= state;
+            Res <= Res;
+            subI <= subI;
+        end
     end
 endmodule

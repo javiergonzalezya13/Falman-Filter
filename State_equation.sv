@@ -91,6 +91,7 @@ module State_equation#(
             .intDigits(intDigits)
         ) MMnx1(
             .clk(clk),
+            .clk_en(clk_en),
             .startMult(Start_mult),
             .A(matrix_mult_in_1),
             .B(matrix_mult_in_2),
