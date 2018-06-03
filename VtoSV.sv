@@ -13,20 +13,19 @@ module VtoSV(
     output [15:0] State2,
     output [15:0] State3
     );
-    wire [15:0] U [0:1];
+    wire [15:0] U[0:0];
     wire [15:0] Y [0:1];
-    wire [15:0] State [0:3];
+    wire [15:0] State [0:2];
     
     assign U[0] = U0;
-    assign U[1] = U1;
-    
+           
     assign Y[0] = Y0;
     assign Y[1] = Y1;
-    
+        
     assign State0 = State[0];
     assign State1 = State[1];
     assign State2 = State[2];
-    assign State3 = State[3];
+    assign State3 = 'd0;
     
     main M(
         .clk(clk),

@@ -17,10 +17,14 @@ module Two_Matrix_Mult#(
     localparam ONMULT = 2'd1;
     localparam ENDMULT = 2'd2;
     
+    localparam INTBITS = 2*WIDTH - intDigits - 1;
+    
     logic [1:0] state = 2'd0, stateNext;
     logic [nos-1:0] subI, subINext;
     
     logic [WIDTH-1:0] ResNext[0:nos-1][0:nos-1];
+    logic [WIDTH-1:0] multW[0:nos-1][0:nos-1] = '{default:0};
+    logic [2*WIDTH-1:0] mult2W[0:nos-1][0:nos-1] = '{default:0};
     
     integer i,j;
     
@@ -46,7 +50,11 @@ module Two_Matrix_Mult#(
         //Matrix multiplication
         for(i=0;i < nos;i=i+1)
             for(j=0;j < nos;j=j+1)
-                ResNext[i][j] = Res[i][j] + ($signed(A[i][subI]) * $signed(B[subI][j]));        
+                begin
+                    mult2W[i][j] = ($signed(A[i][subI]) * $signed(B[subI][j]));
+                    multW[i][j] = {mult2W[i][j][2*WIDTH -1], mult2W[i][j][INTBITS - 1 -:WIDTH - 1]};
+                    ResNext[i][j] = Res[i][j] + multW[i][j];                         
+                end
         end
         else ResNext = Res;
     end
@@ -66,3 +74,4 @@ module Two_Matrix_Mult#(
         end
     end
 endmodule
+

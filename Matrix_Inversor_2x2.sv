@@ -2,7 +2,7 @@
 module Matrix_Inversor_2x2#(
         parameter WIDTH = 16,
         //parameter nos = 2,
-        parameter intDigits = 16
+        parameter intDigits = 10
     )(
         input clk,
         input clk_en,
@@ -23,18 +23,22 @@ module Matrix_Inversor_2x2#(
     localparam ENDINV3 = 4'd8;
     localparam ENDINV = 4'd9;
     
+    localparam INTBITS = 2*WIDTH - intDigits - 1;
+    
     logic [3:0] state = 4'd0, stateNext;
     
     logic [WIDTH-1:0] ResNext[0:1][0:1];
     
     logic [WIDTH-1:0] dividend;
     logic [WIDTH-1:0] divisor;
+    logic [2*WIDTH-1:0] divisor_prev;
     
     logic div_valid;
     logic [31:0] div_data;
     logic t_valid;
-    assign t_valid = (clk_en&&((state == INVERSION0)||(state == INVERSION1)||(state == INVERSION2)||(state == INVERSION3)));
+    assign t_valid = ((state == INVERSION0)||(state == INVERSION1)||(state == INVERSION2)||(state == INVERSION3));
     assign endInv = (state == ENDINV);
+    assign divisor = (divisor_prev[2*WIDTH-1])?-({divisor_prev[2*WIDTH -1], divisor_prev[INTBITS - 1 -:WIDTH - 1]}):{divisor_prev[2*WIDTH -1], divisor_prev[INTBITS - 1 -:WIDTH - 1]};
     
     div_gen_1 Div(
             .aclk(clk),
@@ -61,9 +65,9 @@ module Matrix_Inversor_2x2#(
             ENDINV: stateNext = IDLE;
             default: stateNext = IDLE;
         endcase
-        if(state == IDLE) divisor = 16'd1;
-        else divisor = ($signed(A[0][0]) * $signed(A[1][1]))-($signed(A[0][1]) * $signed(A[1][0]));
-        
+        if(state == IDLE) divisor_prev = 'd1;
+        else divisor_prev = ($signed(A[0][0]) * $signed(A[1][1]))-($signed(A[0][1]) * $signed(A[1][0]));
+        /*
         case(state)
             INVERSION0, ENDINV0: dividend = A[1][1];
             INVERSION1, ENDINV1: dividend = -A[0][1];
@@ -71,17 +75,32 @@ module Matrix_Inversor_2x2#(
             INVERSION3, ENDINV3: dividend = A[0][0];
             default: dividend = 16'd0;
         endcase
+        */
+        case(state)
+            INVERSION0, ENDINV0: dividend = (A[1][1][WIDTH-1])?-A[1][1]:A[1][1];//A[1][1];
+            INVERSION1, ENDINV1: dividend = (A[0][1][WIDTH-1])?-A[0][1]:A[0][1];
+            INVERSION2, ENDINV2: dividend = (A[1][0][WIDTH-1])?-A[1][0]:A[1][0];       
+            INVERSION3, ENDINV3: dividend = (A[0][0][WIDTH-1])?-A[0][0]:A[0][0];
+            default: dividend = 16'd0;
+        endcase
         
-        if(state == ENDINV0) ResNext[0][0] = div_data[31:16];
+        //if(state == ENDINV0) ResNext[0][0] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+        if(state == ENDINV0) ResNext[0][0] = ((divisor_prev[2*WIDTH-1])^(A[1][1][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
         else ResNext[0][0] = Res[0][0];
         
-        if(state == ENDINV1) ResNext[0][1] = div_data[31:16];
+        //if(state == ENDINV1) ResNext[0][1] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+        if(state == ENDINV1) ResNext[0][1] = ((divisor_prev[2*WIDTH-1])^(~A[0][1][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+                
         else ResNext[0][1] = Res[0][1];
         
-        if(state == ENDINV2) ResNext[1][0] = div_data[31:16];
+        //if(state == ENDINV2) ResNext[1][0] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+        if(state == ENDINV2) ResNext[1][0] = ((divisor_prev[2*WIDTH-1])^(~A[1][0][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+                
         else ResNext[1][0] = Res[1][0];
         
-        if(state == ENDINV3) ResNext[1][1] = div_data[31:16];
+        //if(state == ENDINV3) ResNext[1][1] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+        if(state == ENDINV3) ResNext[1][1] = ((divisor_prev[2*WIDTH-1])^(A[0][0][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
+                
         else ResNext[1][1] = Res[1][1];
     end
     always_ff@(posedge clk)
@@ -93,8 +112,8 @@ module Matrix_Inversor_2x2#(
         end
         else 
         begin
-            Res <= Res;
-            state <= state;
+            Res <= ResNext;
+            state <= stateNext;            
         end
     end
 endmodule
