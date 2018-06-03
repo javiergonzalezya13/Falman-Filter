@@ -112,8 +112,8 @@ module Matrix_Inversor_2x2#(
         end
         else 
         begin
-            Res <= ResNext;
-            state <= stateNext;            
+            Res <= Res;
+            state <= state;            
         end
     end
 endmodule
