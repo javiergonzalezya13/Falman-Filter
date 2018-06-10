@@ -156,7 +156,7 @@ module State_equation#(
             begin
                 matrix_mult_in_1 = A;
                 matrix_mult_in_2 = St_I;
-				matrix_add = St_P;
+				matrix_add = St_prev;
             end
             2'd2:
             begin
@@ -167,7 +167,7 @@ module State_equation#(
             2'd3:
             begin
                 matrix_mult_in_1 = K_nk_nosxnos;
-                matrix_mult_in_2 = St_I;
+                matrix_mult_in_2 = St_prev;
 				matrix_add = St_P;
             end
         endcase
@@ -177,8 +177,8 @@ module State_equation#(
         for(int_i0=0; int_i0 < nos; int_i0++)
             begin
                 St_prev_next[int_i0] = (en0)?matrix_mult[int_i0] + matrix_add[int_i0]:St_prev[int_i0];
-			    St_I_next[int_i0] = (en1)?matrix_mult[int_i0] + matrix_add[int_i0]:St_I[int_i0];
-			    St_P_next[int_i0] = (en2)?matrix_mult[int_i0] + matrix_add[int_i0]:St_P[int_i0];
+			    St_I_next[int_i0] = (en2)?matrix_mult[int_i0] + matrix_add[int_i0]:St_I[int_i0];
+			    St_P_next[int_i0] = (en1)?matrix_mult[int_i0] + matrix_add[int_i0]:St_P[int_i0];
             end
         /////////////////////////////////////////////////////////////////////////
 

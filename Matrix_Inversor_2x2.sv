@@ -34,7 +34,7 @@ module Matrix_Inversor_2x2#(
     logic [2*WIDTH-1:0] divisor_prev;
     
     logic div_valid;
-    logic [31:0] div_data;
+    logic [2*WIDTH-1:0] div_data;
     logic t_valid;
     assign t_valid = ((state == INVERSION0)||(state == INVERSION1)||(state == INVERSION2)||(state == INVERSION3));
     assign endInv = (state == ENDINV);

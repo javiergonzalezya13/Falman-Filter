@@ -14,17 +14,17 @@ module VtoSV(
     output [15:0] State3
     );
     wire [15:0] U[0:0];
-    wire [15:0] Y [0:1];
-    wire [15:0] State [0:2];
+    wire [15:0] Y [0:0];
+    wire [15:0] State [0:1];
     
     assign U[0] = U0;
            
     assign Y[0] = Y0;
-    assign Y[1] = Y1;
+    //assign Y[1] = Y1;
         
     assign State0 = State[0];
     assign State1 = State[1];
-    assign State2 = State[2];
+    assign State2 = 'd0;
     assign State3 = 'd0;
     
     main M(

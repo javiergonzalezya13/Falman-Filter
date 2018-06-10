@@ -56,7 +56,8 @@ module covariance_matrix_generator #(
 
 	//Matrices intermedias
 	logic [WIDTH-1:0] g [0:nos-1][0:nos-1]; // P(nk/nk-1)
-    logic [WIDTH-1:0] c [0:nos-1][0:nos-1]; // P(nk-1/nk-1)        
+    logic [WIDTH-1:0] c [0:nos-1][0:nos-1]; // P(nk-1/nk-1)
+    logic [WIDTH-1:0] c_mean [0:nos-1][0:nos-1];        
     logic [WIDTH-1:0] t [0:noo-1][0:noo-1]; // (C P(nk/nk-1) C^T + R)^(-1)
     logic [WIDTH-1:0] matrix_en3 [0:nos-1][0:nos-1]; // P(nk/nk-1) - K(nk) C P(nk/nk-1)
     logic [WIDTH-1:0] j [0:nos-1][0:nos-1]; // C^T
@@ -115,10 +116,23 @@ module covariance_matrix_generator #(
 	
 	//*********************************************************************	
 	//Inversion
+	/*
     Matrix_Inversor_2x2#(
             .WIDTH(WIDTH),
             .intDigits(intDigits)
-        ) MI(
+        ) MI2x2(
+            .clk(clk),
+            .clk_en(clk_en),
+            .startInv(Start_inv2x2),
+            .A(prev_matrix_inversion),
+            .Res(matrix_inv),
+            .endInv(end_inv2x2)
+        );
+    */
+    Matrix_Inversor_1x1#(
+            .WIDTH(WIDTH),
+            .intDigits(intDigits)
+        ) MI1x1(
             .clk(clk),
             .clk_en(clk_en),
             .startInv(Start_inv),
@@ -292,17 +306,20 @@ module covariance_matrix_generator #(
 		// K(nk)
         for (int_i2=0; int_i2 < nos; int_i2++)
             for(int_j2=0; int_j2 < noo; int_j2++)
-                t2_next[int_i2][int_j2] = (en2)?matrix_mult[int_i2][int_j2]:t2[int_i2][int_j2];
+                t2_next[int_i2][int_j2] = (en2&&end_mult)?matrix_AxBxC[int_i2][int_j2]:t2[int_i2][int_j2];
 
         // P(nk/nk) 
+        
         for (int_i3=0; int_i3 < nos; int_i3++)
             for(int_j3=0; int_j3 < nos; int_j3++)
             begin
-				// (P(nk/nk) + P(nk/nk)^T)/2 
+                // P(nk/nk-1) - K(nk) C P(nk/nk-1) 
                 matrix_en3_next[int_i3][int_j3] = (en3)?g[int_i3][int_j3] - matrix_mult[int_i3][int_j3]:matrix_en3[int_i3][int_j3];
 
-                // P(nk/nk-1) - K(nk) C P(nk/nk-1) 
-				c_next[int_i3][int_j3] = (en4)?(matrix_en3[int_i3][int_j3] + matrix_en3[int_j3][int_i3])>>1:c[int_i3][int_j3];
+                // (P(nk/nk) + P(nk/nk)^T)/2
+                c_mean[int_i3][int_j3] = (matrix_en3[int_i3][int_j3])>>>1;
+                c_next[int_i3][int_j3] = (en4)?c_mean[int_i3][int_j3] + c_mean[int_j3][int_i3]:c[int_i3][int_j3];
+				//c_next[int_i3][int_j3] = (en4)?(matrix_en3[int_i3][int_j3] + matrix_en3[int_j3][int_i3])>>>1:c[int_i3][int_j3];
             end
         /////////////////////////////////////////////////////////////////////////
 
