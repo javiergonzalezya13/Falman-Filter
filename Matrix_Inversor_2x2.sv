@@ -1,15 +1,15 @@
 `timescale 1ns / 1ps
+//Modulo inversor de matriz de 2x2
 module Matrix_Inversor_2x2#(
         parameter WIDTH = 16,
-        //parameter nos = 2,
         parameter intDigits = 10
     )(
-        input clk,
-        input clk_en,
-        input startInv,
-        input logic [WIDTH-1:0] A[0:1][0:1],
-        output logic [WIDTH-1:0] Res[0:1][0:1] = '{default:0},
-        output endInv
+        input clk, //Reloj
+        input clk_en, //Reloj de MATLAB
+        input startInv, //Comienzo del calculo de A^-1
+        input logic [WIDTH-1:0] A[0:1][0:1], //Matriz a invertir
+        output logic [WIDTH-1:0] Res[0:1][0:1] = '{default:0}, //Resultado de A^-1
+        output endInv //Termino de calcular A^-1
     );
     
     localparam IDLE = 4'd0;
@@ -67,15 +67,6 @@ module Matrix_Inversor_2x2#(
         endcase
         if(state == IDLE) divisor_prev = 'd1;
         else divisor_prev = ($signed(A[0][0]) * $signed(A[1][1]))-($signed(A[0][1]) * $signed(A[1][0]));
-        /*
-        case(state)
-            INVERSION0, ENDINV0: dividend = A[1][1];
-            INVERSION1, ENDINV1: dividend = -A[0][1];
-            INVERSION2, ENDINV2: dividend = -A[1][0];       
-            INVERSION3, ENDINV3: dividend = A[0][0];
-            default: dividend = 16'd0;
-        endcase
-        */
         case(state)
             INVERSION0, ENDINV0: dividend = (A[1][1][WIDTH-1])?-A[1][1]:A[1][1];//A[1][1];
             INVERSION1, ENDINV1: dividend = (A[0][1][WIDTH-1])?-A[0][1]:A[0][1];
@@ -84,21 +75,17 @@ module Matrix_Inversor_2x2#(
             default: dividend = 16'd0;
         endcase
         
-        //if(state == ENDINV0) ResNext[0][0] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
         if(state == ENDINV0) ResNext[0][0] = ((divisor_prev[2*WIDTH-1])^(A[1][1][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
         else ResNext[0][0] = Res[0][0];
         
-        //if(state == ENDINV1) ResNext[0][1] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
         if(state == ENDINV1) ResNext[0][1] = ((divisor_prev[2*WIDTH-1])^(~A[0][1][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
                 
         else ResNext[0][1] = Res[0][1];
         
-        //if(state == ENDINV2) ResNext[1][0] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
         if(state == ENDINV2) ResNext[1][0] = ((divisor_prev[2*WIDTH-1])^(~A[1][0][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
                 
         else ResNext[1][0] = Res[1][0];
         
-        //if(state == ENDINV3) ResNext[1][1] = {div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
         if(state == ENDINV3) ResNext[1][1] = ((divisor_prev[2*WIDTH-1])^(A[0][0][WIDTH-1]))?-({1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]}):{1'd0, div_data[WIDTH + intDigits - 2 -:intDigits -1], div_data[WIDTH - 2-:WIDTH-intDigits]};//{div_data[WIDTH*2 - 1], div_data[WIDTH + intDigits - 2 -:WIDTH -1]};
                 
         else ResNext[1][1] = Res[1][1];

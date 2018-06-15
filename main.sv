@@ -1,17 +1,18 @@
 `timescale 1ns / 1ps
+//Modulo principal 
 module main#(
         parameter WIDTH = 16, //Largo de digitos
         parameter nos = 2,			//Numero de estados
         parameter noo = 1,            //Numero de salidas
         parameter noi = 1,            //Numero de entradas
-        parameter intDigits = 8    //Numero de digitos enteros
+        parameter intDigits = 8   //Numero de digitos enteros
     )(
-    input clk,
-	input clk_en,
-    input reset,
-    input [WIDTH-1:0] U [0:noi-1],
-	input [WIDTH-1:0] Y [0:noo-1],
-    output [WIDTH-1:0] State [0:nos-1]
+    input clk, //Reloj
+	input clk_en, //Reloj de MATLAB
+    input reset, //Reset
+    input [WIDTH-1:0] U [0:noi-1], //Matriz de entradas
+	input [WIDTH-1:0] Y [0:noo-1], //Matriz de salidas
+    output [WIDTH-1:0] State [0:nos-1] //Matriz de estados
     );
 
 	//Maquina de estados
@@ -21,10 +22,6 @@ module main#(
     localparam STATE3 = 2'd3;		//Esperando que se envie variable
 
 	logic [1:0] state = STATE0, stateNext;
-
-	//Parametros globales
-	
-
 	
 	//Matrices de estado
 	logic [WIDTH-1:0] A [0:nos-1][0:nos-1];
@@ -81,36 +78,26 @@ module main#(
 	
 	assign State = (Retardada)?X_nkP:X_nkU;
     
-    assign A[0][0] = {8'd0, 8'b1000_0000}; assign A[0][1] = {8'd0, 8'd0};// assign A[0][2] = {4'd0, 12'd0};// assign A[0][3] = 'd4;
-    assign A[1][0] = {8'd0, 8'd0}; assign A[1][1] = {8'd0, 8'b0001_1001};// assign A[1][2] = {4'd0, 12'd0};// assign A[1][3] = 'd2;
-    //assign A[2][0] = {4'd0, 12'd0}; assign A[2][1] = {4'd0, 12'd0}; assign A[2][2] = {4'd0, 12'b011001100110};// assign A[2][3] = 'd4;
-    //assign A[3][0] = 'd4; assign A[3][1] = 'd3; assign A[3][2] = 'd8; assign A[3][3] = 'd8;
+    assign A[0][0] = {8'd0, 8'b1000_0000}; assign A[0][1] = {8'd0, 8'd0};
+    assign A[1][0] = {8'd0, 8'd0}; assign A[1][1] = {8'd0, 8'b0001_1001};
     
-    assign B[0][0] = {8'd3, 8'd0}; //assign B[0][1] = {4'd, 12'b};
-    assign B[1][0] = {8'd5, 8'd0}; //assign B[1][1] = {4'd, 12'b};
-    //assign B[2][0] = {4'd0, 12'b000110011001}; //assign B[2][1] = {4'd, 12'b};
-    //assign B[3][0] = {4'd, 12'b}; assign B[3][1] = {4'd, 12'b};
+    assign B[0][0] = {8'd3, 8'd0};
+    assign B[1][0] = {8'd5, 8'd0};
     
-    assign C[0][0] = {8'd5, 8'd0}; assign C[0][1] = {8'd7, 8'd0};// assign C[0][2] = {4'd0, 12'b001100110011}; //assign C[0][3] = {4'd, 12'b};
-    //assign C[1][0] = {4'd0, 12'd0}; assign C[1][1] = {4'd0, 12'b011001100110}; assign C[1][2] = {4'd0, 12'b000110011001}; //assign C[1][3] = {4'd, 12'b};
+    assign C[0][0] = {8'd5, 8'd0}; assign C[0][1] = {8'd7, 8'd0};
     
-    assign Q[0][0] = {8'd0, 8'b1110_0110}; assign Q[0][1] = {8'd0, 8'b0001_1001};// assign Q[0][2] = {4'd0, 12'b0000_0000_1100}; //assign Q[0][3] = {4'd, 12'b};
-    assign Q[1][0] = {8'd0, 8'b0001_1001}; assign Q[1][1] = {8'd0, 8'b0011_0011};// assign Q[1][2] = {4'd0, 12'b000000001001}; //assign Q[1][3] = {4'd, 12'b};
-    //assign Q[2][0] = {4'd0, 12'b0000_0000_1100}; assign Q[2][1] = {4'd0, 12'b000000001001}; assign Q[2][2] = {4'd0, 12'b000000001111}; //assign Q[2][3] = {4'd, 12'b};
-    //assign Q[3][0] = {4'd, 12'b}; assign Q[3][1] = {4'd, 12'b}; assign Q[3][2] = {4'd, 12'b}; assign Q[3][3] = {4'd, 12'b};
+    assign Q[0][0] = {8'd0, 8'b1110_0110}; assign Q[0][1] = {8'd0, 8'b0001_1001};
+    assign Q[1][0] = {8'd0, 8'b0001_1001}; assign Q[1][1] = {8'd0, 8'b0011_0011};
     
-    assign R[0][0] = {8'd0, 8'b1000_0000};// assign R[0][1] = {4'd0, 12'd0};
-    //assign R[1][0] = {4'd0, 12'd0}; assign R[1][1] = {4'd0, 12'b0000_0000_0010};
+    assign R[0][0] = {8'd0, 8'b1000_0000};
     
-    assign P0[0][0] = {8'd0, 8'b0001_1001}; assign P0[0][1] = {8'd0, 8'b0001_0001};// assign P0[0][2] = {4'd0, 12'b000001010001};// assign P0[0][3] = {4'd, 12'b};
-    assign P0[1][0] = {8'd0, 8'b0001_0001}; assign P0[1][1] = {8'd0, 8'b0011_0101};// assign P0[1][2] = {4'd0, 12'b000110011001};// assign P0[1][3] = {4'd, 12'b};
-    //assign P0[2][0] = {4'd0, 12'b000001010001}; assign P0[2][1] = {4'd0, 12'b000110011001}; assign P0[2][2] = {4'd0, 12'b000011001100};// assign P0[2][3] = {4'd, 12'b};
-    //assign P0[3][0] = {4'd, 12'b}; assign P0[3][1] = {4'd, 12'b}; assign P0[3][2] = {4'd, 12'b}; assign P0[3][3] = {4'd, 12'b};
+    //Condiciones iniciales de las matrices P y X
     
+    assign P0[0][0] = {8'd0, 8'b0001_1001}; assign P0[0][1] = {8'd0, 8'b0001_0001};
+    assign P0[1][0] = {8'd0, 8'b0001_0001}; assign P0[1][1] = {8'd0, 8'b0011_0101};
+
     assign X0[0] = {4'd0, 12'd0};
     assign X0[1] = {4'd0, 12'd0};
-    //assign X0[2] = {4'd0, 12'd0};
-    //assign X0[3] = {4'd, 12'b};
     
     State_equation #(
             .WIDTH(WIDTH),

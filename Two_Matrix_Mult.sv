@@ -1,17 +1,17 @@
 `timescale 1ns / 1ps
-
+//Modulo multiplicador de dos matrices NxN
 module Two_Matrix_Mult#(
         parameter WIDTH = 16,
         parameter nos = 4,
         parameter intDigits = 16
     )(
-        input clk,
-        input clk_en,
-        input multON,
-        input logic [WIDTH-1:0] A[0:nos-1][0:nos-1],
-        input logic [WIDTH-1:0] B[0:nos-1][0:nos-1],
-        output logic [WIDTH-1:0] Res[0:nos-1][0:nos-1],
-        output endMult2x2
+        input clk, //Reloj
+        input clk_en, //Reloj de MATLAB
+        input multON, //Comienzo del calculo de la multiplicacionde AxB
+        input logic [WIDTH-1:0] A[0:nos-1][0:nos-1], //Primera matriz a multiplicar
+        input logic [WIDTH-1:0] B[0:nos-1][0:nos-1], //Segunda matriz a multiplicar
+        output logic [WIDTH-1:0] Res[0:nos-1][0:nos-1], //Resultado de AxB
+        output endMult2x2 //Termino de calcular AxB
     );
     localparam IDLE = 2'd0;
     localparam ONMULT = 2'd1;

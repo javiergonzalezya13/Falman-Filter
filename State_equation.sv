@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-
+//Modulo de calculo de los estados estimados
 module State_equation#(
         parameter WIDTH = 16,
         parameter nos = 4,
@@ -7,26 +7,26 @@ module State_equation#(
         parameter noi = 2,
 		parameter intDigits = 16
     )(
-        input logic clk,
-		input logic clk_en,
-        input logic reset,
+        input logic clk, //Reloj
+		input logic clk_en, //Reloj de MATLAB
+        input logic reset, //Reset
         input logic Start_Prediction, 					//Start prediction
         input logic Start_Update, 						//Start update
-        input logic [WIDTH-1:0] A[0:nos-1][0:nos-1],
-        input logic [WIDTH-1:0] B[0:nos-1][0:noi-1],
-        input logic [WIDTH-1:0] C[0:noo-1][0:nos-1],
+        input logic [WIDTH-1:0] A[0:nos-1][0:nos-1], //Matriz A de estado
+        input logic [WIDTH-1:0] B[0:nos-1][0:noi-1], //Matriz B de estado
+        input logic [WIDTH-1:0] C[0:noo-1][0:nos-1], //Matriz C de estado
         input logic [WIDTH-1:0] U[0:noi-1],				//Entrada planta
         input logic [WIDTH-1:0] Y[0:noo-1],				//Salida planta
         input logic [WIDTH-1:0] K_nk[0:nos-1][0:noo-1], //K(nk)
         input logic [WIDTH-1:0] X_0[0:nos-1],			//Estado inicial
-        output logic ready_Prediction,
-        output logic ready_Update,
-        output logic [WIDTH-1:0] X_nkP[0:nos-1],
-        output logic [WIDTH-1:0] X_nkU[0:nos-1]
+        output logic ready_Prediction, //Calculo de la prediccion lista
+        output logic ready_Update, //Calculo de la actualizacion lista
+        output logic [WIDTH-1:0] X_nkP[0:nos-1], //Estado estimado prediccion
+        output logic [WIDTH-1:0] X_nkU[0:nos-1] //Estado estimado Update
     );
 	
 	
-    localparam IDLE = 4'd15;//
+    localparam IDLE = 4'd15;
 	
 	//Prediccion
 	localparam STATE0 = 4'd0;//Empieza multiplicacion ' B x U '
@@ -110,7 +110,6 @@ module State_equation#(
     
     always_comb 
     begin
-		//**************************************ARREGLAR*************
         ///////////////////////////////State Machine//////////////////////////////////////////
         case(state)
             IDLE: stateNext = (Start_Prediction)?STATE0:(Start_Update)?STATE1:IDLE;

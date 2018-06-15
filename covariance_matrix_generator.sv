@@ -1,25 +1,26 @@
 `timescale 1ns / 1ps
+//Modulo de calculo de covarianza
 module covariance_matrix_generator #(
         parameter WIDTH = 16,
         parameter nos = 4,//number of states
         parameter noo = 2, //number of outputs
 		parameter intDigits = 16
     )(
-        input logic clk,
-        input logic clk_en,
-        input logic reset,
-        input logic Start_Prediction,
-        input logic Start_K_G,
-        input logic [WIDTH-1:0] A [0:nos-1][0:nos-1],
-        input logic [WIDTH-1:0] C [0:noo-1][0:nos-1],
+        input logic clk, //Reloj   
+        input logic clk_en, //Reloj de MATLAB
+        input logic reset, //Reset
+        input logic Start_Prediction, //Comenzar prediccion
+        input logic Start_K_G, //Comenzar calculo de ganancia de Kalman
+        input logic [WIDTH-1:0] A [0:nos-1][0:nos-1], //Matriz A de estado
+        input logic [WIDTH-1:0] C [0:noo-1][0:nos-1], //Matriz C de estado
         input logic [WIDTH-1:0] Q [0:nos-1][0:nos-1], // Covarianza ruido de entrada
         input logic [WIDTH-1:0] R [0:noo-1][0:noo-1], // Covarianza ruido de salida
         input logic [WIDTH-1:0] P0 [0:nos-1][0:nos-1],// Covarianza inicial
 
-        output logic [WIDTH-1:0] t2 [0:nos-1][0:noo-1], // K(nk)
-        output logic end_Prediction,
-        output logic end_K_G,
-        output logic end_Update
+        output logic [WIDTH-1:0] t2 [0:nos-1][0:noo-1], // K(nk) ganancia de Kalman
+        output logic end_Prediction, //Calculo de la prediccion listo
+        output logic end_K_G, //Calculo de la ganancia de Kalman listo
+        output logic end_Update //Calculo de la actualizacion listo
     );
     
 	
@@ -140,6 +141,7 @@ module covariance_matrix_generator #(
             .Res(matrix_inv),
             .endInv(end_inv)
         );
+     
     //*********************************************************************
 
 	
